@@ -1,0 +1,8 @@
+{
+  "short_name": "Glow MJ",
+  "name": "Glow Aesthetics by MJ",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#7c5c8a",
+  "background_color": "#faf9f7"
+}
