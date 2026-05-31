@@ -77,13 +77,24 @@ export default function App() {
     setBookings(bs=>bs.map(b=>b.id===id?{...b,status}:b));
     if(status==="confirmed") { const b=bookings.find(b=>b.id===id); if(b) sendSms(b,"confirmation"); }
   }
-  function sendSms(b,type) {
+  async function sendSms(b,type) {
     const t=services.find(t=>t.name===b.treatment);
     let msg="";
     if(type==="confirmation") msg=`Hi ${b.name.split(" ")[0]}! Your ${b.treatment} appointment is confirmed for ${formatDate(b.date)} at ${formatTime(b.time)} with Glow Aesthetics by MJ. 💆`;
     if(type==="reminder") msg=`Hi ${b.name.split(" ")[0]}! Reminder: your ${b.treatment} is tomorrow at ${formatTime(b.time)} with Glow Aesthetics by MJ. 💆`;
     if(type==="return") msg=`Hi ${b.name.split(" ")[0]}! It's been ${t?.returnWeeks} weeks since your last ${b.treatment} at Glow Aesthetics by MJ. Time to book? 🌟`;
-    setSmsLog(l=>[{id:Date.now(),to:b.name,phone:b.phone,msg,sent:new Date().toISOString(),type},...l]);
+    setSmsLog(l=>[{id:Date.now(),to:b.name,phone:b.phone,msg,sent:new Date().toISOString(),type,status:"sending"},...l]);
+    try {
+      const res = await fetch("/api/send-sms", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ to: b.phone, message: msg })
+      });
+      const data = await res.json();
+      setSmsLog(l=>l.map(s=>s.msg===msg?{...s,status:data.success?"sent":"failed"}:s));
+    } catch(err) {
+      setSmsLog(l=>l.map(s=>s.msg===msg?{...s,status:"failed"}:s));
+    }
   }
   function submitBooking() {
     setBookings(bs=>[...bs,{...bookingForm,id:genId(),status:"pending",createdAt:new Date().toISOString()}]);
